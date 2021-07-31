@@ -3,7 +3,7 @@ name: build_backend
 env:
   github_token: ${{ secrets.ghub_token }}
   docker_password: ${{ secrets.DOCKERHUB_PASSWORD }}
-  working_directory: ./backend
+  working_directory: ./api
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
   CI: true
 
