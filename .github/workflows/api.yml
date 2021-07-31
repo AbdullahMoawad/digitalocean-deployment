@@ -1,0 +1,56 @@
+name: build_backend
+
+env:
+  github_token: ${{ secrets.ghub_token }}
+  docker_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+  working_directory: ./backend
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  CI: true
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'api/**'
+      - '.github/**'
+jobs:
+
+  build:
+    name: build api
+    runs-on: ubuntu-latest
+    #    needs: [lint_config]
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - name: General
+        run: |
+          # comment
+          GIT_BRANCH=${{ github.ref }}
+          echo ::set-env name=GH_SHA_SHORT::$(echo $GITHUB_SHA | cut -c 1-7)
+
+      - name: Build Image
+        working-directory: ${{env.working_directory}}
+        run: |
+          docker login --username effinbzz -p ${docker_password}
+          docker build -t api -f Dockerfile .
+
+      - name: Push Image
+        working-directory: ${{env.working_directory}}
+        run: |
+          docker login --username effinbzz -p ${docker_password} docker.io
+          docker tag api effinbzz/api:prod-$GH_SHA_SHORT
+          docker push effinbzz/backend:prod-$GH_SHA_SHORT
+
+          docker tag api effinbzz/api:latest-prod
+          docker push effinbzz/api:latest-prod
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Provision Droplet and deploy container
+        run: doctl compute droplet create api --image docker-18-04 --size s-1vcpu-1gb --region blr1 --user-data-file deploy.sh --wait --enable-ipv6 --enable-monitoring --enable-private-networking
+

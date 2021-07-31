@@ -1,0 +1,19 @@
+version: '3.2'
+
+services:
+  app:
+    container_name: 'api'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ENV_NAME: dev
+    ports:
+      - 7001:7001
+    networks:
+      - app-proxy
+
+networks:
+  app-proxy:
+    driver: bridge
+
